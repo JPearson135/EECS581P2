@@ -110,6 +110,31 @@ class GameManager:
             self.state.record_flag_placed()
             tile.isFlagged = True
 
+    #reveals one covered, non-mine tile while hint uses remain
+    def hint(self):
+        if not self.state.is_active or self.state.hints_remaining == 0:
+            return None
+
+        if self.state.first_move:
+            self._initialize_board(0, 0)
+            self.state.complete_first_move()
+
+        if self.board is None:
+            return None
+
+        width = self.board.dimension["column"]
+        for index, tile in enumerate(self.board.board):
+            if tile.revealed or tile.isFlagged or tile.isMine:
+                continue
+
+            row, column = divmod(index, width)
+            result = self.reveal(row, column)
+            if result is not None:
+                self.state.hints_used += 1
+            return result
+
+        return None
+
 
     #reveals connected empty tiles and their numbered borders using a stack-based flood fill algorithm
     def _flood_fill(self, row: int, column: int) -> None:

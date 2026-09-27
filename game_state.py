@@ -26,6 +26,8 @@ DIFFICULTIES = {
     2: EXPERT,
 }
 
+MAX_HINTS = 3
+
 
 @dataclass
 class GameState:
@@ -33,6 +35,7 @@ class GameState:
     flags_placed: int = 0
     status: GameStatus = GameStatus.PLAYING
     first_move: bool = True
+    hints_used: int = 0
 
     mine_count: int = field(init=False)
     rows: int = field(init=False)
@@ -62,6 +65,10 @@ class GameState:
     @property
     def flags_remaining(self) -> int:
         return max(0, self.mine_count - self.flags_placed)
+
+    @property
+    def hints_remaining(self) -> int:
+        return max(0, MAX_HINTS - self.hints_used)
 
     #returns whether the game is currently being played
     @property
@@ -114,5 +121,6 @@ class GameState:
             self._apply_difficulty(difficulty)
 
         self.flags_placed = 0
+        self.hints_used = 0
         self.status = GameStatus.PLAYING
         self.first_move = True

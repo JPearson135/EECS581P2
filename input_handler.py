@@ -112,6 +112,11 @@ class MinesweeperGame:
         # if key click is "r", restart the game with the same difficulty
         if key == pygame.K_r:
             self._restart_game()
+        elif key == pygame.K_h:
+            was_first_move = self.manager.get_state().first_move
+            self.manager.hint()
+            if was_first_move and not self.manager.get_state().first_move:
+                self.start_ticks = pygame.time.get_ticks()
         # if key click is "escape", go back to the main menu
         elif key == pygame.K_ESCAPE:
             self._go_to_menu()

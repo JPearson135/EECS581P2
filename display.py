@@ -253,7 +253,8 @@ def draw_game(screen, font, big_font, manager, elapsed_seconds):
     timer_rect.top = 10
     timer_rect.right = screen.get_width() - 8
     screen.blit(timer_surface, timer_rect)
-    guide_text = "R: restart   Esc: menu"
+    hints_remaining = _get_value(state, ["hints_remaining"], 0)
+    guide_text = "H: hint (" + str(hints_remaining) + ")   R: restart   Esc: menu"
     guide_surface = font.render(guide_text, True, TEXT_COLOR)
     guide_rect = guide_surface.get_rect()
     guide_rect.top = 40
