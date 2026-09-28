@@ -8,6 +8,9 @@ Outputs: Updated game state, board display, and timer updates.
 External sources: Claude
 Author: Andrew Kruckemyer
 Created: 9/17/26
+
+
+Edited by Courtney McCray on 9/27/2026
 '''
 
 import sys
@@ -72,15 +75,28 @@ class MinesweeperGame:
             if display.menu_button_rect(i).collidepoint(pos):
                 self._start_game(i)
                 return
- 
+
+    # handle game clicks (left click to reveal, right click to flag)
     def _handle_game_click(self, pos, button):
         x, y = pos
-        if y < display.TOP_BAR_HEIGHT:
-            return
- 
         state = self.manager.get_state()
 
-        #do not allow board clicks after the game is over
+        # Handle theme buttons first.
+        # These should work even after the game is over.
+        if button == 1:
+            if display.theme_button_rect(state, "light").collidepoint(pos):
+                display.set_theme("light")
+                return
+
+            if display.theme_button_rect(state, "dark").collidepoint(pos):
+                display.set_theme("dark")
+                return
+
+        # Ignore clicks in the top status bar.
+        if y < display.TOP_BAR_HEIGHT:
+            return
+
+        # do not allow board clicks after the game is over
         if not state.is_active:
             return
         
@@ -89,7 +105,6 @@ class MinesweeperGame:
         if row < 0 or row >= state.rows or col < 0 or col >= state.columns:
             return
  
-
         # left click to reveal square
         if button == 1:
             was_first_move = state.first_move
@@ -98,7 +113,6 @@ class MinesweeperGame:
             #start the timer when the first quare is actually revealed
             if was_first_move and not self.manager.get_state().first_move:
                 self.start_ticks = pygame.time.get_ticks()
-
 
         # right click to flag square
         elif button == 3:
@@ -109,14 +123,18 @@ class MinesweeperGame:
     def _handle_keydown(self, key):
         if self.screen_mode != "playing":
             return
+
         # if key click is "r", restart the game with the same difficulty
         if key == pygame.K_r:
             self._restart_game()
+
         elif key == pygame.K_h:
             was_first_move = self.manager.get_state().first_move
             self.manager.hint()
+
             if was_first_move and not self.manager.get_state().first_move:
                 self.start_ticks = pygame.time.get_ticks()
+
         # if key click is "escape", go back to the main menu
         elif key == pygame.K_ESCAPE:
             self._go_to_menu()
@@ -127,9 +145,23 @@ class MinesweeperGame:
         self.screen_mode = "playing"
         self.start_ticks = None
         self.frozen_elapsed = None
+
         state = self.manager.get_state()
-        window_w = max(state.columns * display.CELL_SIZE, display.MIN_WINDOW_WIDTH)
+
+        # window_w = max(state.columns * display.CELL_SIZE, display.MIN_WINDOW_WIDTH)
+        # window_h = state.rows * display.CELL_SIZE + display.TOP_BAR_HEIGHT
+
+        # changed to include the side panel width for the Light/Dark Mode buttons
+        window_w = (
+            max(
+                state.columns * display.CELL_SIZE,
+                display.MIN_WINDOW_WIDTH
+            )
+            + display.SIDE_PANEL_WIDTH
+        )
+
         window_h = state.rows * display.CELL_SIZE + display.TOP_BAR_HEIGHT
+
         self.screen = pygame.display.set_mode((window_w, window_h))
  
     # restart the game with the same difficulty
@@ -145,6 +177,7 @@ class MinesweeperGame:
         self.manager = None
         self.start_ticks = None
         self.frozen_elapsed = None
+
         # reset the display to menu size
         self.screen = pygame.display.set_mode(display.MENU_SIZE)
     
@@ -152,12 +185,16 @@ class MinesweeperGame:
     def _elapsed_seconds(self):
         if self.start_ticks is None:
             return 0.0
+
         state = self.manager.get_state()
+
         # if the game is over, freeze the timer and return the frozen time
         if not state.is_active:
             if self.frozen_elapsed is None:
                 self.frozen_elapsed = (pygame.time.get_ticks() - self.start_ticks) / 1000
+
             return self.frozen_elapsed
+
         # otherwise, game is still active, return the elapsed time since the game started
         return (pygame.time.get_ticks() - self.start_ticks) / 1000
  

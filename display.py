@@ -20,6 +20,12 @@ MENU_SIZE = (300, 200)
 TOP_BAR_HEIGHT = 72
 CELL_SIZE = 30
 MIN_WINDOW_WIDTH = 300
+# added from Courtney for dark and light mode implementation
+# width of the area to the right of the game board
+SIDE_PANEL_WIDTH = 180
+THEME_BUTTON_WIDTH = 140
+THEME_BUTTON_HEIGHT = 40
+
 
 # basic colors used by the menu and game board
 BACKGROUND_COLOR = (225, 225, 225)
@@ -43,6 +49,32 @@ NUMBER_COLORS = {
     7: (0, 0, 0),
     8: (90, 90, 90),
 }
+
+#Default: light mode, can switch to dark mode
+LIGHT_THEME = {
+    "background": (225, 225, 225),
+    "button": (190, 190, 190),
+    "button_hover": (210, 210, 210),
+    "border": (90, 90, 90),
+    "hidden": (180, 180, 180),
+    "revealed": (235, 235, 235),
+    "top_bar": (205, 205, 205),
+    "text": (20, 20, 20),
+}
+
+DARK_THEME = {
+    "background": (35, 35, 35),
+    "button": (70, 70, 70),
+    "button_hover": (90, 90, 90),
+    "border": (150, 150, 150),
+    "hidden": (75, 75, 75),
+    "revealed": (110, 110, 110),
+    "top_bar": (55, 55, 55),
+    "text": (240, 240, 240),
+}
+
+CURRENT_THEME = LIGHT_THEME
+
  
 # required funcions (referenced in input_handler.py)
 # called in input_handler.py to get the clickable rect for the difficulty buttons
@@ -199,11 +231,95 @@ def _game_over_message(state):
 
     return "Game Over"
 
+def set_theme(theme_name):
+    """Changes the current display theme."""
+    global CURRENT_THEME
+
+    if theme_name == "dark":
+        CURRENT_THEME = DARK_THEME
+    else:
+        CURRENT_THEME = LIGHT_THEME
+
+# Buttons for light/dark themes
+def theme_button_rect(state, mode):
+    """Returns the clickable rectangle for a theme button."""
+    board_width = state.columns * CELL_SIZE
+
+    x = board_width + 20
+
+    if mode == "light":
+        y = TOP_BAR_HEIGHT + 50
+    else:
+        y = TOP_BAR_HEIGHT + 105
+
+    return pygame.Rect(
+        x,
+        y,
+        THEME_BUTTON_WIDTH,
+        THEME_BUTTON_HEIGHT
+    )
+
+# helper function for drawing the theme choice buttons for the user to click on
+def _draw_theme_buttons(screen, font, state):
+    """Draws the Light Mode and Dark Mode buttons beside the board."""
+
+    mouse_pos = pygame.mouse.get_pos()
+
+    # Light Mode button
+    light_rect = theme_button_rect(state, "light")
+
+    if light_rect.collidepoint(mouse_pos):
+        light_color = CURRENT_THEME["button_hover"]
+    else:
+        light_color = CURRENT_THEME["button"]
+
+    pygame.draw.rect(screen, light_color, light_rect)
+    pygame.draw.rect(
+        screen,
+        CURRENT_THEME["border"],
+        light_rect,
+        2
+    )
+
+    _draw_centered_text(
+        screen,
+        font,
+        "Light Mode",
+        CURRENT_THEME["text"],
+        light_rect
+    )
+
+    # Dark Mode button
+    dark_rect = theme_button_rect(state, "dark")
+
+    if dark_rect.collidepoint(mouse_pos):
+        dark_color = CURRENT_THEME["button_hover"]
+    else:
+        dark_color = CURRENT_THEME["button"]
+
+    pygame.draw.rect(screen, dark_color, dark_rect)
+    pygame.draw.rect(
+        screen,
+        CURRENT_THEME["border"],
+        dark_rect,
+        2
+    )
+
+    _draw_centered_text(
+        screen,
+        font,
+        "Dark Mode",
+        CURRENT_THEME["text"],
+        dark_rect
+    )
+
+
+
 # called in input_handler.py to draw the menu screen with difficulty buttons
 def draw_menu(screen, font):
-    screen.fill(BACKGROUND_COLOR)
+    screen.fill(CURRENT_THEME["background"])
 
-    title = font.render("Minesweeper", True, TEXT_COLOR)
+    title = font.render("Minesweeper", True, CURRENT_THEME["text"])
     title_rect = title.get_rect(center=(MENU_SIZE[0] // 2, 20))
     screen.blit(title, title_rect)
 
@@ -213,14 +329,21 @@ def draw_menu(screen, font):
         rect = menu_button_rect(i)
 
         if rect.collidepoint(mouse_pos):
-            color = BUTTON_HOVER_COLOR
+            color = CURRENT_THEME["button_hover"]
         else:
-            color = BUTTON_COLOR
+            color = CURRENT_THEME["button"]
 
         pygame.draw.rect(screen, color, rect)
-        pygame.draw.rect(screen, BORDER_COLOR, rect, 2)
-        _draw_centered_text(screen, font, DIFFICULTY_LABELS[i], TEXT_COLOR, rect)
+        pygame.draw.rect(screen, CURRENT_THEME["border"], rect, 2)
 
+        _draw_centered_text(
+            screen,
+            font,
+            DIFFICULTY_LABELS[i],
+            CURRENT_THEME["text"],
+            rect
+        )
+    
 # called in input_handler.py to draw the game screen with the grid, status bar, mine counter, timer, and win/loss message
 def draw_game(screen, font, big_font, manager, elapsed_seconds):
     # gives you the current game state and board to use for drawing
@@ -230,11 +353,26 @@ def draw_game(screen, font, big_font, manager, elapsed_seconds):
     screen.fill(BACKGROUND_COLOR)
 
     # draw the top status bar
+    '''
     top_bar = pygame.Rect(0, 0, screen.get_width(), TOP_BAR_HEIGHT)
     pygame.draw.rect(screen, TOP_BAR_COLOR, top_bar)
     pygame.draw.line(screen, BORDER_COLOR,
                      (0, TOP_BAR_HEIGHT - 1),
                      (screen.get_width(), TOP_BAR_HEIGHT - 1), 1)
+    '''
+    top_bar = pygame.Rect(0, 0, screen.get_width(), TOP_BAR_HEIGHT)
+    pygame.draw.rect(
+        screen,
+        CURRENT_THEME["top_bar"],
+        top_bar
+    )
+    pygame.draw.line(
+        screen,
+        CURRENT_THEME["border"],
+        (0, TOP_BAR_HEIGHT - 1),
+        (screen.get_width(), TOP_BAR_HEIGHT - 1),
+        1
+    )
 
     flags_used = _count_flags(state, board)
     total_mines = _get_total_mines(state)
@@ -244,18 +382,28 @@ def draw_game(screen, font, big_font, manager, elapsed_seconds):
     else:
         mine_text = "Flags: " + str(total_mines - flags_used)
 
-    mine_surface = font.render(mine_text, True, TEXT_COLOR)
+    #mine_surface = font.render(mine_text, True, TEXT_COLOR)
+    # Now uses CURRENT_THEME for dark and light mode implementation
+    mine_surface = font.render(mine_text, True, CURRENT_THEME["text"])
     screen.blit(mine_surface, (8, 10))
 
     timer_text = "Time: " + str(int(elapsed_seconds))
-    timer_surface = font.render(timer_text, True, TEXT_COLOR)
+    #timer_surface = font.render(timer_text, True, TEXT_COLOR)
+    # Now uses CURRENT_THEME for dark and light mode implementation
+    timer_surface = font.render(timer_text, True, CURRENT_THEME["text"])
     timer_rect = timer_surface.get_rect()
     timer_rect.top = 10
     timer_rect.right = screen.get_width() - 8
     screen.blit(timer_surface, timer_rect)
     hints_remaining = _get_value(state, ["hints_remaining"], 0)
     guide_text = "H: hint (" + str(hints_remaining) + ")   R: restart   Esc: menu"
-    guide_surface = font.render(guide_text, True, TEXT_COLOR)
+    #guide_surface = font.render(guide_text, True, TEXT_COLOR)
+    # Now uses CURRENT_THEME for dark and light mode implementation
+    guide_surface = font.render(
+    guide_text,
+    True,
+    CURRENT_THEME["text"]
+    )
     guide_rect = guide_surface.get_rect()
     guide_rect.top = 40
     guide_rect.centerx = screen.get_width() // 2
@@ -272,7 +420,10 @@ def draw_game(screen, font, big_font, manager, elapsed_seconds):
             revealed, flagged, is_mine, number = _cell_info(state, cell, row, col)
 
             if revealed:
-                pygame.draw.rect(screen, REVEALED_CELL_COLOR, rect)
+                #pygame.draw.rect(screen, REVEALED_CELL_COLOR, rect)
+                # Now uses CURRENT_THEME for dark and light mode implementation
+                pygame.draw.rect(screen, CURRENT_THEME["revealed"], rect)
+
 
                 if is_mine:
                     _draw_centered_text(screen, font, "*", MINE_COLOR, rect)
@@ -280,22 +431,56 @@ def draw_game(screen, font, big_font, manager, elapsed_seconds):
                     color = NUMBER_COLORS.get(number, TEXT_COLOR)
                     _draw_centered_text(screen, font, number, color, rect)
             else:
-                pygame.draw.rect(screen, HIDDEN_CELL_COLOR, rect)
+                #pygame.draw.rect(screen, HIDDEN_CELL_COLOR, rect)
+                # Now uses CURRENT_THEME for dark and light mode implementation
+                pygame.draw.rect(screen, CURRENT_THEME["hidden"], rect)
 
                 if flagged:
                     _draw_centered_text(screen, font, "F", FLAG_COLOR, rect)
 
-            pygame.draw.rect(screen, BORDER_COLOR, rect, 1)
+            #pygame.draw.rect(screen, BORDER_COLOR, rect, 1)
+            # Now uses CURRENT_THEME for dark and light mode implementation
+            pygame.draw.rect(screen, CURRENT_THEME["border"], rect, 1)
+
 
     # show the result after the game ends
     if not state.is_active:
         message = _game_over_message(state)
-        message_surface = big_font.render(message, True, TEXT_COLOR)
+        #message_surface = big_font.render(message, True, TEXT_COLOR)
+        # Now uses CURRENT_THEME for dark and light mode implementation
+        message_surface = big_font.render(
+            message,
+            True,
+            CURRENT_THEME["text"]
+            )
+        board_width = state.columns * CELL_SIZE
+        board_height = state.rows * CELL_SIZE
+
         message_rect = message_surface.get_rect(
-            center=(screen.get_width() // 2, screen.get_height() // 2)
+            center=(
+                board_width // 2,
+                TOP_BAR_HEIGHT + board_height // 2
+            )
         )
 
         background_rect = message_rect.inflate(30, 20)
-        pygame.draw.rect(screen, TOP_BAR_COLOR, background_rect)
-        pygame.draw.rect(screen, BORDER_COLOR, background_rect, 2)
+        #pygame.draw.rect(screen, TOP_BAR_COLOR, background_rect)
+        #pygame.draw.rect(screen, BORDER_COLOR, background_rect, 2)
+        pygame.draw.rect(
+        screen,
+        CURRENT_THEME["top_bar"],
+        background_rect
+        )
+
+        pygame.draw.rect(
+        screen,
+        CURRENT_THEME["border"],
+        background_rect,
+        2
+        )
+
         screen.blit(message_surface, message_rect)
+
+    # draw theme controls outside the game board
+    if state.is_active:
+        _draw_theme_buttons(screen, font, state)
