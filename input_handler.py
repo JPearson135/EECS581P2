@@ -102,6 +102,7 @@ class MinesweeperGame:
         
         row = (y - display.TOP_BAR_HEIGHT) // display.CELL_SIZE
         col = x // display.CELL_SIZE
+        display.set_last_click(row, col)
         if row < 0 or row >= state.rows or col < 0 or col >= state.columns:
             return
  
@@ -126,6 +127,7 @@ class MinesweeperGame:
 
         # if key click is "r", restart the game with the same difficulty
         if key == pygame.K_r:
+            display.clear_last_click()
             self._restart_game()
 
         elif key == pygame.K_h:
@@ -137,6 +139,7 @@ class MinesweeperGame:
 
         # if key click is "escape", go back to the main menu
         elif key == pygame.K_ESCAPE:
+            display.clear_last_click()
             self._go_to_menu()
  
     # start a new game with the selected difficulty
@@ -151,18 +154,9 @@ class MinesweeperGame:
         # window_w = max(state.columns * display.CELL_SIZE, display.MIN_WINDOW_WIDTH)
         # window_h = state.rows * display.CELL_SIZE + display.TOP_BAR_HEIGHT
 
-        # changed to include the side panel width for the Light/Dark Mode buttons
-        window_w = (
-            max(
-                state.columns * display.CELL_SIZE,
-                display.MIN_WINDOW_WIDTH
-            )
-            + display.SIDE_PANEL_WIDTH
+        self.screen = pygame.display.set_mode(
+            display.game_window_size(state)
         )
-
-        window_h = state.rows * display.CELL_SIZE + display.TOP_BAR_HEIGHT
-
-        self.screen = pygame.display.set_mode((window_w, window_h))
  
     # restart the game with the same difficulty
     def _restart_game(self):
