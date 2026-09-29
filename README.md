@@ -32,12 +32,12 @@ python input_handler.py
 ```
 or
 
-'''bash
+```bash
 python3 -m venv .venv
-'''
-'''bash
+```
+```bash
 source .venv/bin/activate
-'''
-'''bash
+```
+```bash
 python input_handler.py
-'''
+```
