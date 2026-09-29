@@ -33,5 +33,7 @@ python input_handler.py
 or
 
 python3 -m venv .venv
-source .venv/bin/source
+:
+source .venv/bin/activate
+:
 python input_handler.py
