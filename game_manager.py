@@ -7,10 +7,17 @@ Outputs: Updated tiles, board data, flag counts, and win/loss status.
 External sources: None
 Author: Lydia Peng
 Created: 9/15/26
+
+Date modified: 9/29/26
+Editor: Sam Prestigiacomo
+Modifications: Added sound effect for when mine hit using pygame's mixer module which loads the audio.
+External Sources:
+Pygame Documentation - https://www.pygame.org/docs/ref/mixer.html
 '''
 from random import randint
 from board import Board
 from game_state import GameState
+import pygame
 
 
 class GameManager:
@@ -51,6 +58,9 @@ class GameManager:
 
         if tile.isMine:
             tile.revealed = True
+            sound_effect = pygame.mixer.Sound("sound.mp3") # Use pygame's mixer module to load the sound effect
+            sound_effect.play()
+
             self.reveal_all_mines()
             self.state.mark_lost()
             return tile
