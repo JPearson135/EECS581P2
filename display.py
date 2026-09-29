@@ -21,13 +21,14 @@ MENU_SIZE = (300, 200)
 TOP_BAR_HEIGHT = 72
 CELL_SIZE = 30
 MIN_WINDOW_WIDTH = 300
+BOARD_MARGIN = 20
 
 # added from Courtney for dark and light mode implementation
 
 # width of the area to the right of the game board
 SIDE_PANEL_WIDTH = 180
-THEME_BUTTON_WIDTH = 140
-THEME_BUTTON_HEIGHT = 40
+THEME_BUTTON_WIDTH = 70
+THEME_BUTTON_HEIGHT = 28
 SCREEN_MARGIN = 8
 BORDER_WIDTH = 5
 
@@ -323,24 +324,45 @@ def set_theme(theme_name):
         CURRENT_THEME = LIGHT_THEME
 
 # Buttons for light/dark themes
-def theme_button_rect(state, mode):
+def theme_button_rect(state, mode, screen_width=None):
     """Returns the clickable rectangle for a theme button."""
-    board_width = state.columns * CELL_SIZE
-    x = BORDER_WIDTH + board_width + 20
+    if screen_width is None:
+        screen_width = game_window_size(state)[0]
+
+    group_width = (THEME_BUTTON_WIDTH * 2) + 6
+    x = (screen_width - group_width) // 2
 
     if mode == "light":
-        y = TOP_BAR_HEIGHT + 50
+        x += THEME_BUTTON_WIDTH + 6
 
-    else:
-        y = TOP_BAR_HEIGHT + 105
-
+    y = BORDER_WIDTH + 6
     return pygame.Rect(
         x,
         y,
         THEME_BUTTON_WIDTH,
         THEME_BUTTON_HEIGHT
-
     )
+
+def board_geometry(screen, state):
+    """Returns the board rectangle and cell size for the current window."""
+    available_width = screen.get_width() - BOARD_MARGIN * 2
+    available_height = screen.get_height() - TOP_BAR_HEIGHT - BOARD_MARGIN * 2
+    cell_size = max(
+        1,
+        min(
+            available_width // state.columns,
+            available_height // state.rows
+        )
+    )
+    board_width = cell_size * state.columns
+    board_height = cell_size * state.rows
+    board_rect = pygame.Rect(
+        (screen.get_width() - board_width) // 2,
+        TOP_BAR_HEIGHT + BOARD_MARGIN + (available_height - board_height) // 2,
+        board_width,
+        board_height
+    )
+    return board_rect, cell_size
 def game_window_size(state):
     """Returns (width, height) for the window so the board, side panel,
     and border all fit. Use this for pygame.display.set_mode() when a
@@ -349,28 +371,25 @@ def game_window_size(state):
     board_height = state.rows * CELL_SIZE
 
     width = (
-        BORDER_WIDTH            # left border
-        + board_width           # board
-        + SIDE_PANEL_WIDTH      # options/theme buttons area
-        + BORDER_WIDTH          # right border
+        board_width
+        + BOARD_MARGIN * 2
     )
     height = (
-        BORDER_WIDTH            # top border
-        + TOP_BAR_HEIGHT        # status bar
-        + board_height          # board
-        + BORDER_WIDTH          # bottom border
+        TOP_BAR_HEIGHT
+        + board_height
+        + BOARD_MARGIN * 2
     )
     return max(width, MIN_WINDOW_WIDTH), height
 
 # helper function for drawing the theme choice buttons for the user to click on
 def _draw_theme_buttons(screen, font, state):
 
-    """Draws the Light Mode and Dark Mode buttons beside the board."""
+    """Draws the Light Mode and Dark Mode buttons in the top status bar."""
 
     mouse_pos = pygame.mouse.get_pos()
 
     # Light Mode button
-    light_rect = theme_button_rect(state, "light")
+    light_rect = theme_button_rect(state, "light", screen.get_width())
 
     if light_rect.collidepoint(mouse_pos):
         light_color = CURRENT_THEME["button_hover"]
@@ -382,33 +401,16 @@ def _draw_theme_buttons(screen, font, state):
     light_width = 4 if CURRENT_THEME is LIGHT_THEME else 2
     pygame.draw.rect(screen, CURRENT_THEME["border"], light_rect, light_width)
 
-    # Options label
-    small_font = pygame.font.Font(None, 28)
-    options_text = small_font.render(
-        "Options",
-        True,
-        CURRENT_THEME["text"]
-    )
-
-    options_rect = options_text.get_rect(
-        center=(
-            light_rect.centerx,
-            light_rect.top - 15
-        )
-    )
-
-    screen.blit(options_text, options_rect)
-
     _draw_centered_text(
         screen,
         font,
-        "Light Mode",
+        "Light",
         CURRENT_THEME["text"],
         light_rect
     )
 
     # Dark Mode button
-    dark_rect = theme_button_rect(state, "dark")
+    dark_rect = theme_button_rect(state, "dark", screen.get_width())
 
     if dark_rect.collidepoint(mouse_pos):
         dark_color = CURRENT_THEME["button_hover"]
@@ -423,7 +425,7 @@ def _draw_theme_buttons(screen, font, state):
     _draw_centered_text(
         screen,
         font,
-        "Dark Mode",
+        "Dark",
         CURRENT_THEME["text"],
         dark_rect
     )
@@ -609,17 +611,18 @@ def draw_game(screen, font, big_font, manager, elapsed_seconds):
     guide_rect.centerx = screen.get_width() // 2
     screen.blit(guide_surface, guide_rect)
 
+    board_rect, cell_size = board_geometry(screen, state)
     game_lost = (not state.is_active) and _game_over_message(state) == "Game Over"
     # draw every cell in the board
     for row in range(state.rows):
         for col in range(state.columns):
-            x = BORDER_WIDTH + col * CELL_SIZE
-            y = BORDER_WIDTH + TOP_BAR_HEIGHT + row * CELL_SIZE
+            x = board_rect.left + col * cell_size
+            y = board_rect.top + row * cell_size
             rect = pygame.Rect(
                 x,
                 y,
-                CELL_SIZE,
-                CELL_SIZE
+                cell_size,
+                cell_size
             )
             cell = _get_cell(
                 board,
@@ -682,14 +685,10 @@ def draw_game(screen, font, big_font, manager, elapsed_seconds):
             CURRENT_THEME["text"]
         )
 
-        board_width = state.columns * CELL_SIZE
-        board_height = state.rows * CELL_SIZE
         message_rect = message_surface.get_rect(
             center=(
-                BORDER_WIDTH + board_width // 2,
-                BORDER_WIDTH +
-                TOP_BAR_HEIGHT +
-                board_height // 2
+                board_rect.centerx,
+                board_rect.centery
             )
 
         )
@@ -719,23 +718,12 @@ def draw_game(screen, font, big_font, manager, elapsed_seconds):
             message_rect
         )
 
-    # draw theme controls outside the game board
-    _draw_theme_buttons(screen, font, state)
-
-    # Draw only the bottom border in the 5-pixel space below the board
-    board_bottom = (
-        BORDER_WIDTH
-        + TOP_BAR_HEIGHT
-        + state.rows * CELL_SIZE
-    )
-
     pygame.draw.rect(
         screen,
         CURRENT_THEME["border"],
-        pygame.Rect(
-            0,
-            board_bottom,
-            screen.get_width(),
-            BORDER_WIDTH
-        )
+        board_rect.inflate(4, 4),
+        2
     )
+
+    # draw theme controls in the top status bar
+    _draw_theme_buttons(screen, font, state)

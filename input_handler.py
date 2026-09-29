@@ -84,11 +84,15 @@ class MinesweeperGame:
         # Handle theme buttons first.
         # These should work even after the game is over.
         if button == 1:
-            if display.theme_button_rect(state, "light").collidepoint(pos):
+            if display.theme_button_rect(
+                state, "light", self.screen.get_width()
+            ).collidepoint(pos):
                 display.set_theme("light")
                 return
 
-            if display.theme_button_rect(state, "dark").collidepoint(pos):
+            if display.theme_button_rect(
+                state, "dark", self.screen.get_width()
+            ).collidepoint(pos):
                 display.set_theme("dark")
                 return
 
@@ -100,11 +104,13 @@ class MinesweeperGame:
         if not state.is_active:
             return
         
-        row = (y - display.TOP_BAR_HEIGHT) // display.CELL_SIZE
-        col = x // display.CELL_SIZE
-        display.set_last_click(row, col)
-        if row < 0 or row >= state.rows or col < 0 or col >= state.columns:
+        board_rect, cell_size = display.board_geometry(self.screen, state)
+        if not board_rect.collidepoint(pos):
             return
+
+        row = (y - board_rect.top) // cell_size
+        col = (x - board_rect.left) // cell_size
+        display.set_last_click(row, col)
  
         # left click to reveal square
         if button == 1:
