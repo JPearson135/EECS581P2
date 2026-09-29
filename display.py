@@ -331,15 +331,18 @@ def theme_button_rect(state, mode):
     )
 
 # helper function for drawing the theme choice buttons for the user to click on
+
 def _draw_theme_buttons(screen, font, state):
+
     """Draws the Light Mode and Dark Mode buttons beside the board."""
+
     mouse_pos = pygame.mouse.get_pos()
 
     # Light Mode button
     light_rect = theme_button_rect(state, "light")
+
     if light_rect.collidepoint(mouse_pos):
         light_color = CURRENT_THEME["button_hover"]
-
     else:
         light_color = CURRENT_THEME["button"]
 
@@ -352,6 +355,23 @@ def _draw_theme_buttons(screen, font, state):
         2
     )
 
+    # Options label
+    small_font = pygame.font.Font(None, 28)
+    options_text = small_font.render(
+        "Options",
+        True,
+        CURRENT_THEME["text"]
+    )
+
+    options_rect = options_text.get_rect(
+        center=(
+            light_rect.centerx,
+            light_rect.top - 15
+        )
+    )
+
+    screen.blit(options_text, options_rect)
+
     _draw_centered_text(
         screen,
         font,
@@ -362,13 +382,14 @@ def _draw_theme_buttons(screen, font, state):
 
     # Dark Mode button
     dark_rect = theme_button_rect(state, "dark")
+
     if dark_rect.collidepoint(mouse_pos):
         dark_color = CURRENT_THEME["button_hover"]
-
     else:
         dark_color = CURRENT_THEME["button"]
 
     pygame.draw.rect(screen, dark_color, dark_rect)
+
     pygame.draw.rect(
         screen,
         CURRENT_THEME["border"],
