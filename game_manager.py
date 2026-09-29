@@ -58,8 +58,11 @@ class GameManager:
 
         if tile.isMine:
             tile.revealed = True
-            sound_effect = pygame.mixer.Sound("sound.mp3") # Use pygame's mixer module to load the sound effect
-            sound_effect.play()
+            try:
+                sound_effect = pygame.mixer.Sound("sound.mp3") # Use pygame's mixer module to load the sound effect
+                sound_effect.play()
+            except pygame as e:
+                print(f"An unexpected error occurred during sound playback: {e}")
 
             self.reveal_all_mines()
             self.state.mark_lost()
