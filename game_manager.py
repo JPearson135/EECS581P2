@@ -8,6 +8,7 @@ External sources: None
 Author: Lydia Peng
 Created: 9/15/26
 '''
+from random import randint
 from board import Board
 from game_state import GameState
 
@@ -164,6 +165,15 @@ class GameManager:
                     stack.append(
                         (current_row + row_offset, current_column + column_offset)
                     )
+
+    def easy_guess(self):
+        row_guess = randint(0,self.state.rows)
+        col_guess = randint(0,self.state.columns)
+        if(self.is_valid_position(row_guess,col_guess)):
+            tile = self._get_tile(row_guess,col_guess)
+            if not tile.revealed:
+                return{row_guess,col_guess}
+
 
 
     #checks whether every non-mine tile has been revealed
