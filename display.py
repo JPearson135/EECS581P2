@@ -9,6 +9,8 @@ Outputs: Rendered game menu and pygame display as well as clickable rectangles u
 External sources: Claude
 Author: Nick Heyer, Andrew Kruckemyer
 Created: 9/17/26
+
+Edited by Jude Weller on 9/29/26
 '''
 
 import pygame
@@ -495,6 +497,29 @@ def _draw_hidden_cell(screen, rect):
     # dark edges on bottom and right
     pygame.draw.line(screen, dark, rect.bottomleft, rect.bottomright, 2)
     pygame.draw.line(screen, dark, rect.topright, rect.bottomright, 2)
+
+# called in input_handler.py to draw the stat screen
+def draw_stats(screen, font):
+    pygame.draw.rect(
+        screen, CURRENT_THEME["background"],
+        pygame.Rect(
+            BOARD_MARGIN,
+            TOP_BAR_HEIGHT + BOARD_MARGIN,
+            screen.get_width() - BOARD_MARGIN * 2,
+            screen.get_height() - TOP_BAR_HEIGHT - BOARD_MARGIN * 2
+        )
+    )
+    stat_text = "STATS"
+    stat_surface = font.render(
+        stat_text,
+        True,
+        CURRENT_THEME["text"]
+    )
+    screen.blit(
+        stat_surface,
+        (screen.get_width() // 2, TOP_BAR_HEIGHT + BOARD_MARGIN * 2 + 10)
+    )
+
 
 # called in input_handler.py to draw the game screen with the grid, status bar, mine counter, timer, and win/loss message
 def draw_game(screen, font, big_font, manager, elapsed_seconds):

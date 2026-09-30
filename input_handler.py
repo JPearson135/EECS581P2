@@ -11,6 +11,7 @@ Created: 9/17/26
 
 
 Edited by Courtney McCray on 9/27/2026
+Edited by Jude Weller on 9/29/2026
 '''
 
 import sys
@@ -34,6 +35,7 @@ class MinesweeperGame:
         self.screen_mode = "menu"
         self.manager = None
         self.screen = pygame.display.set_mode(display.MENU_SIZE)
+        self.statsPopup = False
  
         # timer state
         self.start_ticks = None
@@ -56,6 +58,8 @@ class MinesweeperGame:
             else:
                 display.draw_game(self.screen, self.font, self.big_font,
                                    self.manager, self._elapsed_seconds())
+                if self.statsPopup:
+                    display.draw_stats(self.screen, self.font)
  
             pygame.display.flip()
             self.clock.tick(30)
@@ -104,6 +108,10 @@ class MinesweeperGame:
         if not state.is_active:
             return
         
+        # do not allow board clicks while obsucred by stats menu
+        if self.statsPopup:
+            return
+
         board_rect, cell_size = display.board_geometry(self.screen, state)
         if not board_rect.collidepoint(pos):
             return
@@ -139,6 +147,7 @@ class MinesweeperGame:
         elif key == pygame.K_h:
             was_first_move = self.manager.get_state().first_move
             self.manager.hint()
+            self.statsPopup = False
 
             if was_first_move and not self.manager.get_state().first_move:
                 self.start_ticks = pygame.time.get_ticks()
@@ -147,6 +156,10 @@ class MinesweeperGame:
         elif key == pygame.K_ESCAPE:
             display.clear_last_click()
             self._go_to_menu()
+
+        # if key click is "tab", open the stats menu
+        elif key == pygame.K_TAB:
+            self.statsPopup = not self.statsPopup
  
     # start a new game with the selected difficulty
     def _start_game(self, difficulty_index):
@@ -169,6 +182,7 @@ class MinesweeperGame:
         # get difficulty from current game and restart with same difficulty
         difficulty = self.manager.get_state().difficulty
         self._start_game(difficulty)
+        self.statsPopup = False
  
     # go back to main menu function
     def _go_to_menu(self):
@@ -177,6 +191,7 @@ class MinesweeperGame:
         self.manager = None
         self.start_ticks = None
         self.frozen_elapsed = None
+        self.statsPopup = False
 
         # reset the display to menu size
         self.screen = pygame.display.set_mode(display.MENU_SIZE)
