@@ -15,9 +15,30 @@ External Sources:
 Pygame Documentation - https://www.pygame.org/docs/ref/mixer.html
 '''
 from random import randint
+from pathlib import Path
 from board import Board
 from game_state import GameState
 import pygame
+
+_audio_unavailable = False
+_sound_effect = None
+_sound_path = Path(__file__).with_name("sound.mp3")
+
+
+def _play_mine_sound() -> None:
+    global _audio_unavailable, _sound_effect
+
+    if _audio_unavailable:
+        return
+
+    try:
+        if pygame.mixer.get_init() is None:
+            pygame.mixer.init()
+        if _sound_effect is None:
+            _sound_effect = pygame.mixer.Sound(str(_sound_path))
+        _sound_effect.play()
+    except (OSError, pygame.error):
+        _audio_unavailable = True
 
 
 class GameManager:
@@ -58,11 +79,7 @@ class GameManager:
 
         if tile.isMine:
             tile.revealed = True
-            try:
-                sound_effect = pygame.mixer.Sound("sound.mp3") # Use pygame's mixer module to load the sound effect
-                sound_effect.play()
-            except pygame as e:
-                print(f"An unexpected error occurred during sound playback: {e}")
+            _play_mine_sound()
 
             self.reveal_all_mines()
             self.state.mark_lost()
