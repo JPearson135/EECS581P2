@@ -20,6 +20,7 @@ Maintaining a single-player puzzle game implemented using Python. Players uncove
 ### Prequisites
 - Python
 - Pygame
+- Libpulse0
 
 ### Clone the repository
 ```bash
@@ -32,11 +33,18 @@ python input_handler.py
 ```
 or
 
+### Run this if that does not work
 ```bash
 python3 -m venv .venv
 ```
 ```bash
 source .venv/bin/activate
+```
+```bash
+sudo apt install -y libpulse0 pulseaudio-utils
+```
+```bash
+pip install pygame
 ```
 ```bash
 python input_handler.py
