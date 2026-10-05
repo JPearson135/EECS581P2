@@ -11,6 +11,7 @@ Author: Nick Heyer, Andrew Kruckemyer
 Created: 9/17/26
 
 Edited by Jude Weller on 9/29/26
+Edited by Isaac Miller on 10/4/2026
 '''
 
 import pygame
@@ -20,7 +21,7 @@ from game_state import GameStatus
 # feel free to change these values
 DIFFICULTY_LABELS = ["Beginner", "Intermediate", "Expert"]
 MENU_SIZE = (300, 200)
-TOP_BAR_HEIGHT = 72
+TOP_BAR_HEIGHT = 100
 CELL_SIZE = 30
 MIN_WINDOW_WIDTH = 300
 BOARD_MARGIN = 20
@@ -89,6 +90,12 @@ DARK_THEME = {
 }
 
 CURRENT_THEME = LIGHT_THEME
+
+# Added by Isaac for AI Solver implementation
+AI_MODE_OPTIONS = ["Off", "Interactive", "Auto"]
+AI_LEVEL_OPTIONS = ["Easy", "Medium", "Hard"]
+DROPDOWN_WIDTH = 140
+DROPDOWN_HEIGHT = 24
 
 # (row, col) of the last cell the player left-clicked, used to find the mine that was hit
 LAST_CLICK = None
@@ -345,6 +352,23 @@ def theme_button_rect(state, mode, screen_width=None):
         THEME_BUTTON_HEIGHT
     )
 
+# Dropdown menus for AI Solver settings
+def dropdown_header_rect(which):
+    """which: 0 = mode dropdown, 1 = level dropdown"""
+    x = BORDER_WIDTH + 8 + which * (DROPDOWN_WIDTH + 8)
+    y = BORDER_WIDTH + 70
+    return pygame.Rect(x, y, DROPDOWN_WIDTH, DROPDOWN_HEIGHT)
+
+def dropdown_option_rect(which, index):
+    """Rect for option `index`, stacked below the header."""
+    header = dropdown_header_rect(which)
+    return pygame.Rect(
+        header.left,
+        header.bottom + index * DROPDOWN_HEIGHT,
+        DROPDOWN_WIDTH,
+        DROPDOWN_HEIGHT
+    )
+
 def board_geometry(screen, state):
     """Returns the board rectangle and cell size for the current window."""
     available_width = screen.get_width() - BOARD_MARGIN * 2
@@ -431,6 +455,29 @@ def _draw_theme_buttons(screen, font, state):
         CURRENT_THEME["text"],
         dark_rect
     )
+
+
+# Helper function for drawing the AI Solver Settings for the User to click on
+def _draw_dropdown(screen, font, which, label, options, current, is_open):
+    font = pygame.font.SysFont("arial", 16)
+    mouse = pygame.mouse.get_pos()
+    header = dropdown_header_rect(which)
+
+    color = CURRENT_THEME["button_hover"] if header.collidepoint(mouse) else CURRENT_THEME["button"]
+    pygame.draw.rect(screen, color, header)
+    pygame.draw.rect(screen, CURRENT_THEME["border"], header, 2)
+    _draw_centered_text(screen, font, f"{label}: {current}", CURRENT_THEME["text"], header)
+
+    if not is_open:
+        return
+    for i, option in enumerate(options):
+        rect = dropdown_option_rect(which, i)
+        hovered = rect.collidepoint(mouse)
+        color = CURRENT_THEME["button_hover"] if hovered else CURRENT_THEME["button"]
+        pygame.draw.rect(screen, color, rect)
+        pygame.draw.rect(screen, CURRENT_THEME["border"], rect, 1)
+        text_color = CURRENT_THEME["text"]
+        _draw_centered_text(screen, font, option, text_color, rect)
 
 # called in input_handler.py to draw the menu screen with difficulty buttons
 def draw_menu(screen, font):
@@ -752,3 +799,25 @@ def draw_game(screen, font, big_font, manager, elapsed_seconds):
 
     # draw theme controls in the top status bar
     _draw_theme_buttons(screen, font, state)
+
+    # draw ai solver controls in the top status bar
+    ai_mode = _get_value(manager, ["ai_mode"], "off")
+    ai_level = _get_value(manager, ["ai_level"], "easy")
+    open_dropdown = _get_value(manager, ["open_dropdown"], None)
+    
+    _draw_dropdown(
+        screen, font,
+        which=0,
+        label="Mode",
+        options=AI_MODE_OPTIONS,
+        current=ai_mode.capitalize(),
+        is_open=(open_dropdown == 0)
+    )
+    _draw_dropdown(
+        screen, font,
+        which=1,
+        label="Level",
+        options=AI_LEVEL_OPTIONS,
+        current=ai_level.capitalize(),
+        is_open=(open_dropdown == 1)
+    )

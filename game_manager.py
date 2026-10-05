@@ -13,8 +13,10 @@ Editor: Sam Prestigiacomo
 Modifications: Added sound effect for when mine hit using pygame's mixer module which loads the audio.
 External Sources:
 Pygame Documentation - https://www.pygame.org/docs/ref/mixer.html
+
+Edited by Isaac Miller on 10/5/2026
 '''
-from random import randint
+from random import randint, choice
 from pathlib import Path
 from board import Board
 from game_state import GameState
@@ -46,6 +48,11 @@ class GameManager:
     def __init__(self, difficulty: int):
         self.state = GameState(difficulty)
         self.board = None
+
+        # AI Solver settings
+        self.ai_mode = "off"
+        self.ai_level = "easy"
+        self.open_dropdown = None
 
     #checks whether a position is inside the board
     def is_valid_position(self, row: int, column: int) -> bool:
@@ -196,14 +203,47 @@ class GameManager:
                         (current_row + row_offset, current_column + column_offset)
                     )
 
+    #picks a random covered, unflagged tile; returns (row, column) or None
     def easy_guess(self):
-        row_guess = randint(0,self.state.rows)
-        col_guess = randint(0,self.state.columns)
-        if(self.is_valid_position(row_guess,col_guess)):
-            tile = self._get_tile(row_guess,col_guess)
-            if not tile.revealed:
-                return{row_guess,col_guess}
+        if self.state.first_move:
+            # the board doesn't exist yet, so any position works
+            return (
+                randint(0, self.state.rows - 1),
+                randint(0, self.state.columns - 1)
+            )
 
+        width = self.board.dimension["column"]
+        candidates = [
+            divmod(index, width)
+            for index, tile in enumerate(self.board.board)
+            if not tile.revealed and not tile.isFlagged
+        ]
+        return choice(candidates) if candidates else None
+
+    def medium_guess(self):
+        return None
+
+    def hard_guess(self):
+        return None
+
+    #makes one AI move; returns the (row, column) played, or None if no move was made
+    def ai_move(self):
+        if not self.state.is_active:
+            return None
+
+        if self.ai_level == "easy":
+            guess = self.easy_guess()
+        elif self.ai_level == "medium":
+            guess = self.medium_guess()
+        elif self.ai_level == "hard":
+            guess = self.hard_guess()
+
+        if guess is None:
+            return None
+
+        row, column = guess
+        self.reveal(row, column)
+        return guess
 
 
     #checks whether every non-mine tile has been revealed

@@ -12,6 +12,7 @@ Created: 9/17/26
 
 Edited by Courtney McCray on 9/27/2026
 Edited by Jude Weller on 9/29/2026
+Edited by Isaac Miller on 10/5/2026
 '''
 
 import sys
@@ -52,6 +53,11 @@ class MinesweeperGame:
                     self._handle_click(event.pos, event.button)
                 elif event.type == pygame.KEYDOWN:
                     self._handle_keydown(event.key)
+
+            self._update_ai()
+
+            if self.screen_mode == "menu":
+                display.draw_menu(self.screen, self.font)
  
             if self.screen_mode == "menu":
                 display.draw_menu(self.screen, self.font)
@@ -80,6 +86,61 @@ class MinesweeperGame:
                 self._start_game(i)
                 return
 
+    # handle clicks on the AI dropdowns; returns True if the click was used
+    def _handle_dropdown_click(self, pos):
+        m = self.manager
+        option_lists = [display.AI_MODE_OPTIONS, display.AI_LEVEL_OPTIONS]
+
+        # if a list is open, check its options first
+        if m.open_dropdown is not None:
+            which = m.open_dropdown
+            for i, option in enumerate(option_lists[which]):
+                if display.dropdown_option_rect(which, i).collidepoint(pos):
+                    if which == 0:
+                        m.ai_mode = option.lower()
+                    else:
+                        m.ai_level = option.lower()
+                    m.open_dropdown = None
+                    return True
+
+        # clicking a header opens it (or closes it if it was already open)
+        for which in (0, 1):
+            if display.dropdown_header_rect(which).collidepoint(pos):
+                m.open_dropdown = None if m.open_dropdown == which else which
+                return True
+
+        # clicking anywhere else just closes an open list
+        if m.open_dropdown is not None:
+            m.open_dropdown = None
+            return True
+
+        return False
+
+    # make one AI move; returns True if it moved
+    def _ai_turn(self):
+        m = self.manager
+        was_first_move = m.get_state().first_move
+        move = m.ai_move()
+        if move is None:
+            return False
+
+        display.set_last_click(*move)       # so a mine the AI hits gets highlighted
+        if was_first_move and not m.get_state().first_move:
+            self.start_ticks = pygame.time.get_ticks()
+        return True
+
+    def _update_ai(self):
+        m = self.manager
+        if self.screen_mode != "playing" or m.ai_mode != "auto":
+            return
+        if m.open_dropdown is not None or self.statsPopup:
+            return
+
+        while m.get_state().is_active:
+            if not self._ai_turn():
+                m.ai_mode = "off"
+                break
+
     # handle game clicks (left click to reveal, right click to flag)
     def _handle_game_click(self, pos, button):
         x, y = pos
@@ -88,6 +149,9 @@ class MinesweeperGame:
         # Handle theme buttons first.
         # These should work even after the game is over.
         if button == 1:
+            if self._handle_dropdown_click(pos):
+                return
+        
             if display.theme_button_rect(
                 state, "light", self.screen.get_width()
             ).collidepoint(pos):
@@ -123,11 +187,14 @@ class MinesweeperGame:
         # left click to reveal square
         if button == 1:
             was_first_move = state.first_move
-            self.manager.reveal(row, col)
+            result = self.manager.reveal(row, col)
 
             #start the timer when the first quare is actually revealed
             if was_first_move and not self.manager.get_state().first_move:
                 self.start_ticks = pygame.time.get_ticks()
+
+            if (result is not None and self.manager.ai_mode == "interactive" and self.manager.get_state().is_active):
+                self._ai_turn()
 
         # right click to flag square
         elif button == 3:
