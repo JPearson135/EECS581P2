@@ -237,6 +237,8 @@ class GameManager:
             guess = self.medium_guess()
         elif self.ai_level == "hard":
             guess = self.hard_guess()
+        else:
+            guess = self.easy_guess()
 
         if guess is None:
             return None
