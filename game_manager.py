@@ -15,6 +15,10 @@ External Sources:
 Pygame Documentation - https://www.pygame.org/docs/ref/mixer.html
 
 Edited by Isaac Miller on 10/5/2026
+
+Date modified: 10/06/26
+Editor: Jaiden Watts
+Modifications: implemented medium difficulty ai solver
 '''
 from random import randint, choice
 from pathlib import Path
@@ -221,7 +225,66 @@ class GameManager:
         return choice(candidates) if candidates else None
 
     def medium_guess(self):
-        return None
+        # Use the easy solver until the first move creates the board.
+        if self.board is None or self.state.first_move:
+            return self.easy_guess()
+
+        # Track board bounds and the moves deduced from revealed clues.
+        width = self.board.dimension["column"]
+        height = self.board.dimension["row"]
+        cells_to_flag = set()
+        safe_cells = set()
+
+        # Inspect each revealed tile as a possible source of deductions.
+        for index, tile in enumerate(self.board.board):
+            if not tile.revealed:
+                continue
+
+            row, column = divmod(index, width)
+            hidden_neighbors = []
+            flagged_neighbors = 0
+
+            # Count adjacent flags and collect covered, unflagged neighbors.
+            for row_offset in (-1, 0, 1):
+                for column_offset in (-1, 0, 1):
+                    if row_offset == 0 and column_offset == 0:
+                        continue
+
+                    neighbor_row = row + row_offset
+                    neighbor_column = column + column_offset
+                    if not (
+                        0 <= neighbor_row < height
+                        and 0 <= neighbor_column < width
+                    ):
+                        continue
+
+                    neighbor_index = neighbor_row * width + neighbor_column
+                    neighbor = self.board.board[neighbor_index]
+                    if neighbor.isFlagged:
+                        flagged_neighbors += 1
+                    elif not neighbor.revealed:
+                        hidden_neighbors.append((neighbor_row, neighbor_column))
+
+            # If every remaining hidden neighbor must be a mine, flag them.
+            remaining_mines = tile.adjacent - flagged_neighbors
+            if hidden_neighbors and remaining_mines == len(hidden_neighbors):
+                cells_to_flag.update(hidden_neighbors)
+            # If all mines are accounted for, the other hidden neighbors are safe.
+            elif hidden_neighbors and flagged_neighbors == tile.adjacent:
+                safe_cells.update(hidden_neighbors)
+
+        # Apply certain flags together; this turn does not also reveal a tile.
+        if cells_to_flag:
+            for row, column in cells_to_flag:
+                self.toggle_flag(row, column)
+            return None
+
+        # Choose one cell known to be safe from the deductions.
+        if safe_cells:
+            return choice(tuple(safe_cells))
+
+        # No rule applied, so choose a random covered, unflagged cell.
+        return self.easy_guess()
 
     def hard_guess(self):
         return None
