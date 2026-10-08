@@ -27,12 +27,11 @@ from game_state import GameState
 import pygame
 
 _audio_unavailable = False
-_sound_effect = None
-_sound_path = Path(__file__).with_name("sound.mp3")
+_sounds = {}
 
 
-def _play_mine_sound() -> None:
-    global _audio_unavailable, _sound_effect
+def _play_sound(name: str) -> None:
+    global _audio_unavailable
 
     if _audio_unavailable:
         return
@@ -40,9 +39,9 @@ def _play_mine_sound() -> None:
     try:
         if pygame.mixer.get_init() is None:
             pygame.mixer.init()
-        if _sound_effect is None:
-            _sound_effect = pygame.mixer.Sound(str(_sound_path))
-        _sound_effect.play()
+        if name not in _sounds:
+            _sounds[name] = pygame.mixer.Sound(str(Path(__file__).with_name(name)))
+        _sounds[name].play()
     except (OSError, pygame.error):
         _audio_unavailable = True
 
@@ -90,7 +89,7 @@ class GameManager:
 
         if tile.isMine:
             tile.revealed = True
-            _play_mine_sound()
+            _play_sound("sound.mp3")
 
             self.reveal_all_mines()
             self.state.mark_lost()
@@ -103,6 +102,7 @@ class GameManager:
 
         if self.check_win():
             self.state.mark_won()
+            _play_sound("winning_sound.mp3")
 
         return tile
 
