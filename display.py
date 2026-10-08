@@ -593,10 +593,10 @@ def draw_stats(screen, font, stats=None):
     `stats` is an optional list of (label, value) pairs."""
     if stats is None:
         stats = [
-            ("Games Played", "0"),
             ("Wins", "0"),
             ("Losses", "0"),
-            ("Best Time", "--"),
+            ("Winstreak", "0"),
+            ("Best Time", "--")
         ]
 
     # dim everything behind the box

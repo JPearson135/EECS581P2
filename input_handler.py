@@ -20,6 +20,7 @@ import pygame
  
 from game_manager import GameManager
 import display
+from game_state import GameStatus
  
 DIFFICULTY_LABELS = display.DIFFICULTY_LABELS
  
@@ -41,6 +42,14 @@ class MinesweeperGame:
         # timer state
         self.start_ticks = None
         self.frozen_elapsed = None
+
+        # stats
+        self.stats = {
+            'Wins': 0,
+            'Losses': 0,
+            'Winstreak': 0,
+            'Best Time': "--"
+        }
     
     # main game loop
     def run(self):
@@ -64,7 +73,7 @@ class MinesweeperGame:
 
             # the stats box can appear on top of either screen
             if self.statsPopup:
-                display.draw_stats(self.screen, self.font)
+                display.draw_stats(self.screen, self.font, tuple(self.stats.items()))
 
             pygame.display.flip()
             self.clock.tick(30)
