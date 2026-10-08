@@ -20,7 +20,7 @@ from game_state import GameStatus
 # required constants (referenced in input_handler.py)
 # feel free to change these values
 DIFFICULTY_LABELS = ["Beginner", "Intermediate", "Expert"]
-MENU_SIZE = (300, 200)
+MENU_SIZE = (300, 280)
 TOP_BAR_HEIGHT = 100
 CELL_SIZE = 30
 MIN_WINDOW_WIDTH = 300
@@ -113,15 +113,17 @@ def clear_last_click():
 # called in input_handler.py to get the clickable rect for the difficulty buttons
 
 def menu_button_rect(index):
-    """Returns the clickable rect for the difficulty button at `index`.
-    Used by input_handler.py for click detection AND should be used
-    here in draw_menu() so buttons are drawn exactly where clicks are
-    detected. Feel free to change the layout -- just keep both uses in
-    sync."""
+    """Returns the clickable rect for the button at `index`.
+    Indexes 0-2 are the difficulty buttons, index 3 is Stats."""
     width, height = 200, 40
     x = (MENU_SIZE[0] - width) // 2
-    y = 40 + index * (height + 10)
+    y = 60 + index * (height + 10)
     return pygame.Rect(x, y, width, height)
+
+# called in input_handler.py to get the clickable rect for the stats button
+def stats_button_rect():
+    """Returns the clickable rectangle for the Stats button."""
+    return menu_button_rect(len(DIFFICULTY_LABELS))
 
 # helper function for centering text inside a rectangle
 def _draw_centered_text(screen, font, text, color, rect):
@@ -482,10 +484,11 @@ def _draw_dropdown(screen, font, which, label, options, current, is_open):
 # called in input_handler.py to draw the menu screen with difficulty buttons
 def draw_menu(screen, font):
     screen.fill(CURRENT_THEME["background"])
-    title = font.render("Minesweeper", True, CURRENT_THEME["text"])
+    title_font = pygame.font.SysFont("arial", 32, bold=True)
+    title = title_font.render("Minesweeper", True, CURRENT_THEME["text"])
     title_rect = title.get_rect(
-        center=(MENU_SIZE[0] // 2, 20)
-    )
+        center=(MENU_SIZE[0] // 2, 28)
+    )  
     screen.blit(title, title_rect)
     mouse_pos = pygame.mouse.get_pos()
     for i in range(len(DIFFICULTY_LABELS)):
@@ -511,6 +514,29 @@ def draw_menu(screen, font):
             CURRENT_THEME["text"],
             rect
         )
+    # Creates the stats button
+    stats_rect = stats_button_rect()
+
+    if stats_rect.collidepoint(mouse_pos):
+        color = CURRENT_THEME["button_hover"]
+    else:
+        color = CURRENT_THEME["button"]
+
+    pygame.draw.rect(screen, color, stats_rect)
+    pygame.draw.rect(
+        screen,
+        CURRENT_THEME["border"],
+        stats_rect,
+        2
+    )
+
+    _draw_centered_text(
+        screen,
+        font,
+        "Stats",
+        CURRENT_THEME["text"],
+        stats_rect
+    )
 
 def _draw_flag(screen, rect):
     cx, cy = rect.center
@@ -546,26 +572,39 @@ def _draw_hidden_cell(screen, rect):
     pygame.draw.line(screen, dark, rect.topright, rect.bottomright, 2)
 
 # called in input_handler.py to draw the stat screen
-def draw_stats(screen, font):
-    pygame.draw.rect(
-        screen, CURRENT_THEME["background"],
-        pygame.Rect(
-            BOARD_MARGIN,
-            TOP_BAR_HEIGHT + BOARD_MARGIN,
-            screen.get_width() - BOARD_MARGIN * 2,
-            screen.get_height() - TOP_BAR_HEIGHT - BOARD_MARGIN * 2
-        )
-    )
-    stat_text = "STATS"
-    stat_surface = font.render(
-        stat_text,
-        True,
-        CURRENT_THEME["text"]
-    )
-    screen.blit(
-        stat_surface,
-        (screen.get_width() // 2, TOP_BAR_HEIGHT + BOARD_MARGIN * 2 + 10)
-    )
+def draw_stats(screen, font, stats=None):
+    """Draws a centered stats box over whatever screen is showing.
+    `stats` is an optional list of (label, value) pairs."""
+    if stats is None:
+        stats = [
+            ("Games Played", "0"),
+            ("Wins", "0"),
+            ("Losses", "0"),
+            ("Best Time", "--"),
+        ]
+
+    # dim everything behind the box
+    overlay = pygame.Surface(screen.get_size(), pygame.SRCALPHA)
+    overlay.fill((0, 0, 0, 140))
+    screen.blit(overlay, (0, 0))
+
+    # the box itself
+    box = pygame.Rect(0, 0, min(260, screen.get_width() - 20), 200)
+    box.center = screen.get_rect().center
+    pygame.draw.rect(screen, CURRENT_THEME["background"], box)
+    pygame.draw.rect(screen, CURRENT_THEME["border"], box, 3)
+
+    title_font = pygame.font.SysFont("arial", 28, bold=True)
+    title = title_font.render("Stats", True, CURRENT_THEME["text"])
+    screen.blit(title, title.get_rect(midtop=(box.centerx, box.top + 12)))
+
+    for i, (label, value) in enumerate(stats):
+        line = font.render(f"{label}: {value}", True, CURRENT_THEME["text"])
+        screen.blit(line, (box.left + 20, box.top + 55 + i * 30))
+
+    small = pygame.font.SysFont("arial", 14)
+    hint = small.render("Click or press Esc to close", True, CURRENT_THEME["text"])
+    screen.blit(hint, hint.get_rect(midbottom=(box.centerx, box.bottom - 8)))
 
 
 # called in input_handler.py to draw the game screen with the grid, status bar, mine counter, timer, and win/loss message

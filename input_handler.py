@@ -58,15 +58,14 @@ class MinesweeperGame:
 
             if self.screen_mode == "menu":
                 display.draw_menu(self.screen, self.font)
- 
-            if self.screen_mode == "menu":
-                display.draw_menu(self.screen, self.font)
             else:
                 display.draw_game(self.screen, self.font, self.big_font,
-                                   self.manager, self._elapsed_seconds())
-                if self.statsPopup:
-                    display.draw_stats(self.screen, self.font)
- 
+                                  self.manager, self._elapsed_seconds())
+
+            # the stats box can appear on top of either screen
+            if self.statsPopup:
+                display.draw_stats(self.screen, self.font)
+
             pygame.display.flip()
             self.clock.tick(30)
  
@@ -81,10 +80,20 @@ class MinesweeperGame:
             self._handle_game_click(pos, button)
  
     def _handle_menu_click(self, pos):
+        # if the stats box is open, any click closes it
+        if self.statsPopup:
+            self.statsPopup = False
+            return
+
         for i in range(len(DIFFICULTY_LABELS)):
             if display.menu_button_rect(i).collidepoint(pos):
                 self._start_game(i)
                 return
+
+        # Stats button
+        if display.stats_button_rect().collidepoint(pos):
+            self.statsPopup = True
+            return
 
     # handle clicks on the AI dropdowns; returns True if the click was used
     def _handle_dropdown_click(self, pos):
@@ -203,6 +212,11 @@ class MinesweeperGame:
 
     # handle keyboard inputs
     def _handle_keydown(self, key):
+        if self.screen_mode == "menu":
+            if key == pygame.K_ESCAPE:
+                self.statsPopup = False
+            return
+
         if self.screen_mode != "playing":
             return
 
@@ -234,6 +248,7 @@ class MinesweeperGame:
         self.screen_mode = "playing"
         self.start_ticks = None
         self.frozen_elapsed = None
+        self.statsPopup = False
 
         state = self.manager.get_state()
 
