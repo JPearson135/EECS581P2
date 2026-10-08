@@ -94,8 +94,9 @@ CURRENT_THEME = LIGHT_THEME
 # Added by Isaac for AI Solver implementation
 AI_MODE_OPTIONS = ["Off", "Interactive", "Auto"]
 AI_LEVEL_OPTIONS = ["Easy", "Medium", "Hard"]
-DROPDOWN_WIDTH = 140
+DROPDOWN_WIDTH = 108
 DROPDOWN_HEIGHT = 24
+STATS_BUTTON_WIDTH = 56
 
 # (row, col) of the last cell the player left-clicked, used to find the mine that was hit
 LAST_CLICK = None
@@ -119,6 +120,12 @@ def menu_button_rect(index):
     x = (MENU_SIZE[0] - width) // 2
     y = 60 + index * (height + 10)
     return pygame.Rect(x, y, width, height)
+
+def game_stats_button_rect():
+    """Stats button at the end of the dropdown row in the game screen."""
+    x = BORDER_WIDTH + 8 + 2 * (DROPDOWN_WIDTH + 8)
+    y = BORDER_WIDTH + 70
+    return pygame.Rect(x, y, STATS_BUTTON_WIDTH, DROPDOWN_HEIGHT)
 
 # called in input_handler.py to get the clickable rect for the stats button
 def stats_button_rect():
@@ -461,7 +468,7 @@ def _draw_theme_buttons(screen, font, state):
 
 # Helper function for drawing the AI Solver Settings for the User to click on
 def _draw_dropdown(screen, font, which, label, options, current, is_open):
-    font = pygame.font.SysFont("arial", 16)
+    font = pygame.font.SysFont("arial", 14)
     mouse = pygame.mouse.get_pos()
     header = dropdown_header_rect(which)
 
@@ -480,6 +487,15 @@ def _draw_dropdown(screen, font, which, label, options, current, is_open):
         pygame.draw.rect(screen, CURRENT_THEME["border"], rect, 1)
         text_color = CURRENT_THEME["text"]
         _draw_centered_text(screen, font, option, text_color, rect)
+
+def _draw_game_stats_button(screen, font):
+    font = pygame.font.SysFont("arial", 14)
+    rect = game_stats_button_rect()
+    hovered = rect.collidepoint(pygame.mouse.get_pos())
+    color = CURRENT_THEME["button_hover"] if hovered else CURRENT_THEME["button"]
+    pygame.draw.rect(screen, color, rect)
+    pygame.draw.rect(screen, CURRENT_THEME["border"], rect, 2)
+    _draw_centered_text(screen, font, "Stats", CURRENT_THEME["text"], rect)
 
 # called in input_handler.py to draw the menu screen with difficulty buttons
 def draw_menu(screen, font):
@@ -843,6 +859,8 @@ def draw_game(screen, font, big_font, manager, elapsed_seconds):
     ai_mode = _get_value(manager, ["ai_mode"], "off")
     ai_level = _get_value(manager, ["ai_level"], "easy")
     open_dropdown = _get_value(manager, ["open_dropdown"], None)
+
+    _draw_game_stats_button(screen, font)
     
     _draw_dropdown(
         screen, font,

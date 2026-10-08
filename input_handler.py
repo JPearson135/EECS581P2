@@ -160,11 +160,9 @@ class MinesweeperGame:
         if button == 1:
             if self._handle_dropdown_click(pos):
                 return
-        
-            if display.theme_button_rect(
-                state, "light", self.screen.get_width()
-            ).collidepoint(pos):
-                display.set_theme("light")
+
+            if display.game_stats_button_rect().collidepoint(pos):
+                self.statsPopup = not self.statsPopup
                 return
 
             if display.theme_button_rect(
