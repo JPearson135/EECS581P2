@@ -180,6 +180,11 @@ class MinesweeperGame:
             ).collidepoint(pos):
                 display.set_theme("dark")
                 return
+            if display.theme_button_rect(
+                state, "light", self.screen.get_width()
+            ).collidepoint(pos):
+                display.set_theme("light")
+                return
 
         # Ignore clicks in the top status bar.
         if y < display.TOP_BAR_HEIGHT:
