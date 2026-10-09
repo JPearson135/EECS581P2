@@ -12,6 +12,8 @@ Created: 9/17/26
 
 Edited by Jude Weller on 9/29/26
 Edited by Isaac Miller on 10/4/2026
+
+Edited by Sam Prestigiacomo on 10/9/26
 '''
 
 import pygame
@@ -23,7 +25,7 @@ DIFFICULTY_LABELS = ["Beginner", "Intermediate", "Expert"]
 MENU_SIZE = (300, 280)
 TOP_BAR_HEIGHT = 100
 CELL_SIZE = 30
-MIN_WINDOW_WIDTH = 300
+MIN_WINDOW_WIDTH = 500 # Increased from 300 to 500
 BOARD_MARGIN = 20
 
 # added from Courtney for dark and light mode implementation
