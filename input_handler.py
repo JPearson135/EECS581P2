@@ -145,6 +145,7 @@ class MinesweeperGame:
         display.set_last_click(*move)       # so a mine the AI hits gets highlighted
         if was_first_move and not m.get_state().first_move:
             self.start_ticks = pygame.time.get_ticks()
+        self._updateStats()
         return True
 
     def _update_ai(self):
@@ -208,6 +209,8 @@ class MinesweeperGame:
             #start the timer when the first quare is actually revealed
             if was_first_move and not self.manager.get_state().first_move:
                 self.start_ticks = pygame.time.get_ticks()
+
+            self._updateStats()
 
             if (result is not None and self.manager.ai_mode == "interactive" and self.manager.get_state().is_active):
                 self._ai_turn()
@@ -301,6 +304,18 @@ class MinesweeperGame:
 
         # otherwise, game is still active, return the elapsed time since the game started
         return (pygame.time.get_ticks() - self.start_ticks) / 1000
+
+    def _updateStats(self):
+            state = self.manager.get_state()
+            if not state.is_active and state.status == GameStatus.WON:
+                self.stats["Wins"] += 1
+                self.stats["Winstreak"] += 1
+                if self.stats["Best Time"] == '--' or self.stats["Best Time"] > self._elapsed_seconds():
+                    self.stats["Best Time"] = self._elapsed_seconds()
+            elif not state.is_active:
+                self.stats["Losses"] += 1
+                self.stats["Winstreak"] = 0
+
  
 # main function to start the game
 def main():
