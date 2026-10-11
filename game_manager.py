@@ -224,7 +224,7 @@ class GameManager:
         ]
         return choice(candidates) if candidates else None
 
-    def medium_guess(self):
+    def medium_guess(self, allow_random=True):
         # Use the easy solver until the first move creates the board.
         if self.board is None or self.state.first_move:
             return self.easy_guess()
@@ -277,17 +277,110 @@ class GameManager:
         if cells_to_flag:
             for row, column in cells_to_flag:
                 self.toggle_flag(row, column)
-            return None
+            return self.medium_guess(allow_random)
 
         # Choose one cell known to be safe from the deductions.
         if safe_cells:
             return choice(tuple(safe_cells))
 
         # No rule applied, so choose a random covered, unflagged cell.
-        return self.easy_guess()
+        return self.easy_guess() if allow_random else None
 
     def hard_guess(self):
-        return None
+        # Use the easy solver until the first move creates the board.
+        if self.board is None or self.state.first_move:
+            return self.easy_guess()
+
+        # 1. Everything Medium can deduce (no random fallback).
+        move = self.medium_guess(allow_random=False)
+        if move is not None:
+            return move
+
+        # Track board bounds and the moves deduced from revealed clues.
+        width = self.board.dimension["column"]
+        height = self.board.dimension["row"]
+        cells_to_flag = set()
+        safe_cells = set()
+
+        # (step along the line of numbers, step toward the hidden side)
+        directions = [
+            ((0, 1), (-1, 0)),   # 1-2-1 above current spot
+            ((0, 1), (1, 0)),    # 1-2-1 below current spot
+            ((1, 0), (0, -1)),   # 1-2-1 left of current spot
+            ((1, 0), (0, 1)),    # 1-2-1 right of current spot
+        ]
+
+        # Every revealed 2 is a possible middle of a 1-2-1.
+        for index, tile in enumerate(self.board.board):
+            if not tile.revealed or tile.adjacent != 2:
+                continue
+
+            row, column = divmod(index, width)
+
+            # Collect every covered neighbor of the 2 (flagged ones included).
+            covered_neighbors = set()
+            for row_offset in (-1, 0, 1):
+                for column_offset in (-1, 0, 1):
+                    if row_offset == 0 and column_offset == 0:
+                        continue
+
+                    neighbor_row = row + row_offset
+                    neighbor_column = column + column_offset
+                    if not (
+                        0 <= neighbor_row < height
+                        and 0 <= neighbor_column < width
+                    ):
+                        continue
+
+                    neighbor = self.board.board[neighbor_row * width + neighbor_column]
+                    if not neighbor.revealed:
+                        covered_neighbors.add((neighbor_row, neighbor_column))
+
+            # Try each orientation of the pattern around this 2.
+            for (along_row, along_column), (side_row, side_column) in directions:
+                first_row, first_column = row - along_row, column - along_column
+                last_row, last_column = row + along_row, column + along_column
+                if not (
+                    0 <= first_row < height and 0 <= first_column < width
+                    and 0 <= last_row < height and 0 <= last_column < width
+                ):
+                    continue
+
+                # Both numbers beside the 2 must be revealed 1s.
+                first_tile = self.board.board[first_row * width + first_column]
+                last_tile = self.board.board[last_row * width + last_column]
+                if not (
+                    first_tile.revealed and first_tile.adjacent == 1
+                    and last_tile.revealed and last_tile.adjacent == 1
+                ):
+                    continue
+
+                outer1 = (first_row + side_row, first_column + side_column)
+                outer2 = (last_row + side_row, last_column + side_column)
+                inner = (row + side_row, column + side_column)
+
+                # The 2's covered neighbors must be exactly these three tiles.
+                if covered_neighbors != {outer1, inner, outer2}:
+                    continue
+
+                # The two outer tiles are mines; flag any that aren't flagged yet.
+                for outer_row, outer_column in (outer1, outer2):
+                    if not self.board.board[outer_row * width + outer_column].isFlagged:
+                        cells_to_flag.add((outer_row, outer_column))
+
+                # The inner tile is safe, unless the player flagged it.
+                if not self.board.board[inner[0] * width + inner[1]].isFlagged:
+                    safe_cells.add(inner)
+
+        # Apply the deduced flags, then reveal one of the safe tiles.
+        for row, column in cells_to_flag:
+            self.toggle_flag(row, column)
+
+        if safe_cells:
+            return choice(tuple(safe_cells))
+
+        # 3. Nothing applies: random click.
+        return self.easy_guess()
 
     #makes one AI move; returns the (row, column) played, or None if no move was made
     def ai_move(self):
