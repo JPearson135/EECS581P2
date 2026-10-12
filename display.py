@@ -875,7 +875,7 @@ def draw_game(screen, font, big_font, manager, elapsed_seconds):
     _draw_dropdown(
         screen, font,
         which=1,
-        label="Level",
+        label="AI Level",
         options=AI_LEVEL_OPTIONS,
         current=ai_level.capitalize(),
         is_open=(open_dropdown == 1)
